@@ -1,77 +1,110 @@
+const express = require("express");
+const cors = require("cors");
+const dayjs = require("dayjs");
+const db = require("./db");
 
-
-// const express = require("express");
-// const cors = require("cors");
-// const app = express();
-// const http = require("http");
-// const WebSocket = require("ws");
-
-// //미들웨어는 라우터 위로
-// app.use(cors());
-// app.use(express.json());
-
-// const server = http.createServer(app);
+const app = express();
+app.use(express.json());
+app.use(cors());
 
 
 // const reservations = new Map();
 
-// app.post("/api/reservations", (req, res) => {
-//     const { userId, date } = req.body;
+//예약된날짜조회
+app.get("/api/reservations/reserved-dates", (req, res) => {
+    db.query(
+        "SELECT DATE(start_at) as reservedDates FROM reservations GROUP BY DATE(start_at) HAVING COUNT(*)=3",
+        (err, result) => {
+            if (err) {
+                return res.status(500).json({ error: "서버 오류" });
+            }
+            return res.status(200).json({ reservedDates: result.map(item => item.reservedDates) });
+        }
+    )
+});
 
-//     if (reservations.has(date)) {
-//         return res.status(409).json({ error: "이미 예약된 날짜입니다." });
-//     }
-
-//     const reservation = {
-//         id: crypto.randomUUID(),
-//         userId,
-//         date,
-//         status: "reserved",
-//     };
-
-//     reservations.set(date, reservation);
-//     res.status(201).json(reservation);
-// })
-
-
-
-// //listen은 항상 마지막
-// app.listen(4000, () => {
-//     console.log("서버 실행 중!");
-// });
-
-const express = require("express");
-
-const app = express();
-app.use(express.json());
-
-const reservations = new Map();
-
-//예약 생성
-app.post("/api/create/reservation", (req, res) => {
-    const { userId, date, time } = req.body; //구조분해할당
-
-    //중복체크
-    if (reservations.has(`${date}-${time}`)) {
-        return res.status(409).json({ error: "이미 예약되었습니다." });
-    };
-
-    const reservation = {
-        id: crypto.randomUUID(),
-        userId,
-        date,
-        time,
-        status: "reserved",
-    };
-
-    reservations.set(`${date}-${time}`, reservation);
-    return res.status(201).json("예약완료");
+//예약된시간조회
+app.get("/api/reservations/reserved-times", (req, res) => {
+    const { date } = req.query;
+    db.query(
+        "SELECT TIME(start_at) as reservedTimes FROM reservations WHERE DATE(start_at) = ?",
+        [date],
+        (err, result) => {
+            if (err) {
+                return res.status(500).json({ error: "서버 오류" });
+            }
+            return res.status(200).json({ reservedTimes: result.map(item => item.reservedTimes) });
+        }
+    )
 })
 
-//예약 조회
+
+//예약 생성
+app.post("/api/reservations", (req, res) => {
+    const { start_at } = req.body; //구조분해할당
+    const end_at = dayjs(start_at).add(1, "hour").format("YYYY-MM-DD HH:mm:ss");
+
+
+    if (!start_at) {
+        return res.status(400).json({ error: "start_at 없음" })
+    }
+
+    //중복체크
+    db.query(
+        "SELECT * FROM reservations WHERE start_at = ?",
+        [start_at],
+        (err, result) => {
+            //쿼리 에러 -> 전역핸들러로 변경예정
+            if (err) {
+                return res.status(500).json({ error: "서버 오류" });
+            }
+
+            // 중복체크
+            if (result.length > 0) {
+                return res.status(409).json({ error: "이미 예약됨" });
+            }
+
+
+            db.query(
+                "INSERT INTO reservations (start_at, end_at, status) VALUES (?, ?, ?)",
+                [start_at, end_at, "reserved"],
+                (err, result) => {
+                    if (err) {
+                        return res.status(500).json({ error: "서버오류" });
+                    }
+                    return res.status(201).json({ message: "예약완료" });
+                })
+
+
+        }
+    )
+
+
+
+
+
+
+    //map은 객체를 만들고 저장
+    // const reservation = {
+    //     id: crypto.randomUUID(),
+    //     start_at,
+    //     end_at: dayjs(start_at).add(1, "hour").format("YYYY-MM-DD HH:mm:ss"),
+    //     status: "reserved",
+    // };
+
+    // reservations.set(start_at, reservation);
+
+
+
+
+})
+
+
+//전체 예약 조회
 app.get("/api/reservations", (req, res) => {
     return res.json([...reservations.values()])
 });
+
 
 app.listen(4000, () =>
     console.log("서버 구동")
