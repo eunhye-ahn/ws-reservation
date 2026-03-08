@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import dayjs from "dayjs";
-import { isCursorAtEnd } from "@testing-library/user-event/dist/utils";
 
 const ALL_TIMES = ["10:00:00", "11:00:00", "12:00:00"];
 
 const ReservationModal = ({ date, onClose }) => {
     const [reservedTimes, setReservedTimes] = useState([]);
-    const [seletedTime, setSeletedTime] = useState(null);
+    const [selectedTime, setSelectedTime] = useState(null);
 
     const fetchReservedTimes = async (date) => {
         try {
@@ -21,7 +20,7 @@ const ReservationModal = ({ date, onClose }) => {
 
     useEffect(() => {
         fetchReservedTimes(date)
-        setSeletedTime(null)
+        setSelectedTime(null)
     }, [date]);
 
     //예약생성
@@ -32,23 +31,27 @@ const ReservationModal = ({ date, onClose }) => {
             body: JSON.stringify({ start_at: `${dayjs(date).format("YYYY-MM-DD")} ${time}` })
         });
         const data = await res.json();
-
     }
 
     const handleTimeClick = async (time) => {
         try {
             await fetchCreateReservation(time);
-            setSeletedTime(time)
+            setSelectedTime(null)
             onClose()
         } catch (err) {
             console.error(err)
         }
     }
 
+    const handleClose = () => {
+        setSelectedTime(null);
+        onClose();
+    }
+
 
     return (
         <div
-            onClick={onClose}
+            onClick={handleClose}
             style={{
                 position: "fixed",
                 top: 0, left: 0,
@@ -69,7 +72,7 @@ const ReservationModal = ({ date, onClose }) => {
                     position: "relative",
                     overflowY: "auto"
                 }}>
-                <button onClick={onClose} style={{
+                <button onClick={handleClose} style={{
                     position: "absolute",
                     top: "10px", right: "10px",
                     background: "none",
@@ -95,13 +98,15 @@ const ReservationModal = ({ date, onClose }) => {
                             const isReserved = reservedTimes.includes(time)
                             return (
                                 <div key={time}
-                                    onClick={() => setSeletedTime(time)}
+                                    onClick={() => setSelectedTime(time)}
 
                                     style={{
                                         padding: "10px 20px",
                                         margin: "10px 5px",
-                                        border: isReserved ? "1px solid rgba(0,0,0,0.2)" : "1px solid black",
+                                        border: isReserved ? "1px solid rgba(0,0,0,0.2)" :
+                                            selectedTime === time ? "2px solid green" : "1px solid black",
                                         color: isReserved ? "rgba(0,0,0,0.2)" : "black",
+
                                         borderRadius: "8px",
                                         backgroundColor: "transparent",
                                         cursor: isReserved ? "not-allowed" : "pointer",
@@ -119,12 +124,12 @@ const ReservationModal = ({ date, onClose }) => {
                 }}>
 
                     <button
-                        onClick={() => handleTimeClick(seletedTime)}
-                        disabled={!seletedTime}
+                        onClick={() => handleTimeClick(selectedTime)}
+                        disabled={!selectedTime}
                         style={{
                             backgroundColor: 'transparent',
                             borderRadius: "8px",
-                            border: !seletedTime ? "solid rgba(0,0,0,0.2) 1px" : "solid black 1px",
+                            border: !selectedTime ? "solid rgba(0,0,0,0.2) 1px" : "solid black 1px",
                             margin: "15px 0",
                             padding: "5px 30px",
                             width: "80%"
