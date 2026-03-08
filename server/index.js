@@ -2,10 +2,26 @@ const express = require("express");
 const cors = require("cors");
 const dayjs = require("dayjs");
 const db = require("./db");
+const { createServer } = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+    cors: {
+        origin: "http://localhost:3000"
+    }
+})
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: "http://localhost:3000"
+}));
+
+
+io.on('connection', (socket) => {
+    console.log("io 연결완료")
+
+})
 
 
 // const reservations = new Map();
@@ -79,24 +95,6 @@ app.post("/api/reservations", (req, res) => {
         }
     )
 
-
-
-
-
-
-    //map은 객체를 만들고 저장
-    // const reservation = {
-    //     id: crypto.randomUUID(),
-    //     start_at,
-    //     end_at: dayjs(start_at).add(1, "hour").format("YYYY-MM-DD HH:mm:ss"),
-    //     status: "reserved",
-    // };
-
-    // reservations.set(start_at, reservation);
-
-
-
-
 })
 
 
@@ -106,6 +104,6 @@ app.get("/api/reservations", (req, res) => {
 });
 
 
-app.listen(4000, () =>
+httpServer.listen(4000, () =>
     console.log("서버 구동")
 );
