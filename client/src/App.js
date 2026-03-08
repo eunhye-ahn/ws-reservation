@@ -6,26 +6,66 @@ import React from 'react';
 import dayjs from 'dayjs';
 
 const localizer = momentLocalizer(moment);
+const ALL_TIMES = ["10:00:00", "11:00:00", "12:00:00"];
 
+const ReservationModal = ({ date, onClose }) => {
+  const [reservedTimes, setReservedTimes] = useState([]);
+
+  const fetchReservedTimes = async (date) => {
+    try {
+      const selectedDate = dayjs(date).format("YYYY-MM-DD")
+      const res = await fetch(`http://localhost:4000/api/reservations/reserved-times?date=${selectedDate}`);
+      const data = await res.json();
+      setReservedTimes(data.reservedTimes);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  useEffect(() => {
+    fetchReservedTimes(date)
+  }, [date]);
+
+  return (
+    <div>
+      {ALL_TIMES.map((time) => {
+        const isReserved = reservedTimes.includes(time)
+        return (
+          <div key={time} style={{
+
+          }}>
+            {time} {isReserved ? "불가능" : "가능"}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 function App() {
 
-  // const [events, setEvents] = useState([]);
   const [reservedDates, setReservedDates] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+
+
 
   useEffect(() => {
-    fetch('http://localhost:4000/api/reservations/reserved-dates')
-      .then(res => res.json())
-      .then(data => {
-        setReservedDates(data.reservedDates.map(date => dayjs(date).format("YYYY-MM-DD")));
-        // const converted = data.reservedDates.map(item => ({
-        //   start: new Date(item),
-        //   end: new Date(item)
-        // }));
-        // setEvents(converted);
-      })
-  }, [])
+    const fetchReservedDates = async () => {
+      try {
+        const res = await fetch('http://localhost:4000/api/reservations/reserved-dates');
+        const data = await res.json();
+        setReservedDates(data.reservedDates);
+      } catch (err) {
+        console.log(err);
+      }
 
+    }
+    fetchReservedDates();
+  }, []);
+
+  //예약마감된 날짜 표시
   const dayPropGetter = (date) => {
     const isReserved = reservedDates.includes(dayjs(date).format("YYYY-MM-DD"));
     if (isReserved) {
@@ -39,8 +79,11 @@ function App() {
   }
 
 
-  //event 상태로 관리
-  //예약 조회 api fetch > 데이터 > event 객체로 생성 > set
+  const handleDateClick = ({ start }) => {
+    setSelectedDate(start)
+    setIsOpen(true)
+
+  }
 
   return (
     <div >
@@ -52,9 +95,15 @@ function App() {
         style={{ height: 500 }}
 
         dayPropGetter={dayPropGetter}
+
+        selectable
+        onSelectSlot={handleDateClick}
       />
+      {isOpen && <ReservationModal date={selectedDate} onClose={() => setIsOpen(false)} />}
     </div>
   );
 }
 
 export default App;
+
+

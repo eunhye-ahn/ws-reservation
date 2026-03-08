@@ -18,7 +18,7 @@ app.get("/api/reservations/reserved-dates", (req, res) => {
             if (err) {
                 return res.status(500).json({ error: "서버 오류" });
             }
-            return res.status(200).json({ reservedDates: result.map(item => item.reservedDates) });
+            return res.status(200).json({ reservedDates: result.map(item => dayjs(item.reservedDates).format("YYYY-MM-DD")) });
         }
     )
 });
