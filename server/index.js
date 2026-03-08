@@ -19,7 +19,11 @@ app.use(cors({
 
 
 io.on('connection', (socket) => {
-    console.log("io 연결완료")
+    //캘린더구독 신청 > reservation 방 입장시킴
+    socket.on('subscribe:calendar', () => {
+        socket.join('reservation')
+        console.log('캘린더 구독')
+    })
 
 })
 
@@ -88,6 +92,9 @@ app.post("/api/reservations", (req, res) => {
                     if (err) {
                         return res.status(500).json({ error: "서버오류" });
                     }
+                    const date = dayjs(start_at).format("YYYY-MM-DD");
+                    // reservation 방 유저들에게 브로드캐스트
+                    io.to('reservation').emit('update:calendar', { date });
                     return res.status(201).json({ message: "예약완료" });
                 })
 

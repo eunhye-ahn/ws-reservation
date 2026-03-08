@@ -18,7 +18,12 @@ function App() {
   const socketRef = useSocket();
 
   useEffect(() => {
-    console.log("소켓 연결완료");
+    //소켓 구독신청과 수신
+    socketRef.current.emit('subscribe:calendar')
+    socketRef.current.on('update:calendar', (data) => {
+      console.log(data);
+    })
+
     const fetchReservedDates = async () => {
       try {
         const res = await fetch('http://localhost:4000/api/reservations/reserved-dates');
