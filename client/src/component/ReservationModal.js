@@ -65,7 +65,7 @@ const ReservationModal = ({ date, onClose }) => {
                     background: "white",
                     borderRadius: "8px",
                     padding: "40px",
-                    width: "50%", height: "50%",
+                    width: "30%",
                     position: "relative",
                     overflowY: "auto"
                 }}>
@@ -113,12 +113,28 @@ const ReservationModal = ({ date, onClose }) => {
                         })}
                     </div>
                 </div>
-                <button
-                    onClick={() => handleTimeClick(seletedTime)}
-                    disabled={!seletedTime}
-                >
-                    예약하기
-                </button>
+                <div style={{
+                    display: "flex",
+                    justifyContent: "center"
+                }}>
+
+                    <button
+                        onClick={() => handleTimeClick(seletedTime)}
+                        disabled={!seletedTime}
+                        style={{
+                            backgroundColor: 'transparent',
+                            borderRadius: "8px",
+                            border: !seletedTime ? "solid rgba(0,0,0,0.2) 1px" : "solid black 1px",
+                            margin: "15px 0",
+                            padding: "5px 30px",
+                            width: "80%"
+                        }}
+                    >
+                        예약하기
+                    </button>
+                </div>
+
+
 
             </div>
         </div >
