@@ -41,7 +41,7 @@ const ReservationModal = ({ date, onClose }) => {
             setSeletedTime(time)
             onClose()
         } catch (err) {
-            console.log(err)
+            console.error(err)
         }
     }
 

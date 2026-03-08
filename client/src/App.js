@@ -37,7 +37,7 @@ function App() {
       return {
         style: {
           backgroundColor: "gray",
-          cursor: "not-allowed"
+          cursor: "not-allowed",
         }
       }
     }
@@ -46,6 +46,7 @@ function App() {
 
   const handleDateClick = ({ start }) => {
     setSelectedDate(start)
+    if (reservedDates.includes(dayjs(start).format("YYYY-MM-DD"))) return;
     setIsOpen(true)
   }
 
