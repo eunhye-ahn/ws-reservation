@@ -2,45 +2,10 @@ import { Calendar, momentLocalizer } from 'react-big-calendar'
 import moment from 'moment'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import { useEffect, useState } from 'react';
-import React from 'react';
 import dayjs from 'dayjs';
+import ReservationModal from './component/ReservationModal';
 
 const localizer = momentLocalizer(moment);
-const ALL_TIMES = ["10:00:00", "11:00:00", "12:00:00"];
-
-const ReservationModal = ({ date, onClose }) => {
-  const [reservedTimes, setReservedTimes] = useState([]);
-
-  const fetchReservedTimes = async (date) => {
-    try {
-      const selectedDate = dayjs(date).format("YYYY-MM-DD")
-      const res = await fetch(`http://localhost:4000/api/reservations/reserved-times?date=${selectedDate}`);
-      const data = await res.json();
-      setReservedTimes(data.reservedTimes);
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  useEffect(() => {
-    fetchReservedTimes(date)
-  }, [date]);
-
-  return (
-    <div>
-      {ALL_TIMES.map((time) => {
-        const isReserved = reservedTimes.includes(time)
-        return (
-          <div key={time} style={{
-
-          }}>
-            {time} {isReserved ? "불가능" : "가능"}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
 
 function App() {
 
@@ -82,7 +47,6 @@ function App() {
   const handleDateClick = ({ start }) => {
     setSelectedDate(start)
     setIsOpen(true)
-
   }
 
   return (
