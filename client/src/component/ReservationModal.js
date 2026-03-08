@@ -6,6 +6,7 @@ const ALL_TIMES = ["10:00:00", "11:00:00", "12:00:00"];
 
 const ReservationModal = ({ date, onClose }) => {
     const [reservedTimes, setReservedTimes] = useState([]);
+    const [seletedTime, setSeletedTime] = useState(null);
 
     const fetchReservedTimes = async (date) => {
         try {
@@ -20,7 +21,30 @@ const ReservationModal = ({ date, onClose }) => {
 
     useEffect(() => {
         fetchReservedTimes(date)
+        setSeletedTime(null)
     }, [date]);
+
+    //예약생성
+    const fetchCreateReservation = async (time) => {
+        const res = await fetch("http://localhost:4000/api/reservations", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ start_at: `${dayjs(date).format("YYYY-MM-DD")} ${time}` })
+        });
+        const data = await res.json();
+
+    }
+
+    const handleTimeClick = async (time) => {
+        try {
+            await fetchCreateReservation(time);
+            setSeletedTime(time)
+            onClose()
+        } catch (err) {
+            console.log(err)
+        }
+    }
+
 
     return (
         <div
@@ -70,25 +94,34 @@ const ReservationModal = ({ date, onClose }) => {
                         {ALL_TIMES.map((time) => {
                             const isReserved = reservedTimes.includes(time)
                             return (
-                                <div key={time} style={{
-                                    padding: "10px 20px",
-                                    margin: "10px 5px",
-                                    border: isReserved ? "1px solid rgba(0,0,0,0.2)" : "1px solid black",
-                                    color: isReserved ? "rgba(0,0,0,0.2)" : "black",
-                                    borderRadius: "8px",
-                                    backgroundColor: "transparent",
-                                    cursor: isReserved ? "not-allowed" : "pointer",
-                                    pointerEvents: isReserved ? "none" : "auto"
-                                }}>
+                                <div key={time}
+                                    onClick={() => setSeletedTime(time)}
+
+                                    style={{
+                                        padding: "10px 20px",
+                                        margin: "10px 5px",
+                                        border: isReserved ? "1px solid rgba(0,0,0,0.2)" : "1px solid black",
+                                        color: isReserved ? "rgba(0,0,0,0.2)" : "black",
+                                        borderRadius: "8px",
+                                        backgroundColor: "transparent",
+                                        cursor: isReserved ? "not-allowed" : "pointer",
+                                        pointerEvents: isReserved ? "none" : "auto"
+                                    }}>
                                     {time.slice(0, 5)}
                                 </div>
                             )
                         })}
                     </div>
                 </div>
+                <button
+                    onClick={() => handleTimeClick(seletedTime)}
+                    disabled={!seletedTime}
+                >
+                    예약하기
+                </button>
 
             </div>
-        </div>
+        </div >
     )
 }
 
