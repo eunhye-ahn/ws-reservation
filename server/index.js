@@ -2,25 +2,54 @@ const express = require("express");
 const cors = require("cors");
 const dayjs = require("dayjs");
 const db = require("./db");
+const { createServer } = require("http");
+const { Server } = require("socket.io");
+
 
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+    cors: {
+        origin: "http://localhost:3000"
+    }
+})
+
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:3000'
+}));
+
+
+io.on('connection', (socket) => {
+    socket.on('subscribe:calendar', () => {
+        socket.join('calendar');
+    })
+    socket.on('subscribe:date', (date) => {
+        socket.join(`reservation:${date}`);
+    })
+})
 
 
 // const reservations = new Map();
-
-//예약된날짜조회
-app.get("/api/reservations/reserved-dates", (req, res) => {
+const getFullDates = (callback) => {
     db.query(
         "SELECT DATE(start_at) as reservedDates FROM reservations GROUP BY DATE(start_at) HAVING COUNT(*)=3",
         (err, result) => {
             if (err) {
                 return res.status(500).json({ error: "서버 오류" });
             }
-            return res.status(200).json({ reservedDates: result.map(item => dayjs(item.reservedDates).format("YYYY-MM-DD")) });
+            const fullDates = result.map(data => dayjs(data.reservedDates).format("YYYY-MM-DD"));
+            callback(fullDates);
         }
     )
+}
+
+//예약된날짜조회
+app.get("/api/reservations/reserved-dates", (req, res) => {
+    getFullDates((fullDates) => {
+        return res.status(200).json({ reservedDates: fullDates });
+    })
+
 });
 
 //예약된시간조회
@@ -72,6 +101,13 @@ app.post("/api/reservations", (req, res) => {
                     if (err) {
                         return res.status(500).json({ error: "서버오류" });
                     }
+                    const date = dayjs(start_at).format("YYYY-MM-DD");
+                    const time = dayjs(start_at).format("HH:mm:ss");
+                    getFullDates((fullDates) => {
+                        const isFull = fullDates.includes(date);
+                        io.to('calendar').emit('update:calendar', { date, isFull });
+                    })
+                    io.to(`reservation:${date}`).emit('update:time', { time });
                     return res.status(201).json({ message: "예약완료" });
                 })
 
@@ -79,20 +115,6 @@ app.post("/api/reservations", (req, res) => {
         }
     )
 
-
-
-
-
-
-    //map은 객체를 만들고 저장
-    // const reservation = {
-    //     id: crypto.randomUUID(),
-    //     start_at,
-    //     end_at: dayjs(start_at).add(1, "hour").format("YYYY-MM-DD HH:mm:ss"),
-    //     status: "reserved",
-    // };
-
-    // reservations.set(start_at, reservation);
 
 
 
@@ -106,6 +128,6 @@ app.get("/api/reservations", (req, res) => {
 });
 
 
-app.listen(4000, () =>
+httpServer.listen(4000, () =>
     console.log("서버 구동")
 );

@@ -4,6 +4,8 @@ import 'react-big-calendar/lib/css/react-big-calendar.css'
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import ReservationModal from './component/ReservationModal';
+import { useSocket } from './hooks/useSocket';
+
 
 const localizer = momentLocalizer(moment);
 
@@ -14,9 +16,15 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
 
-
+  const socketRef = useSocket();
 
   useEffect(() => {
+    socketRef.current.emit('subscribe:calendar')
+    socketRef.current.on('update:calendar', (data) => {
+      console.log(data);
+      if (data.isFull) setReservedDates(prev => [...prev, data.date]);
+    })
+
     const fetchReservedDates = async () => {
       try {
         const res = await fetch('http://localhost:4000/api/reservations/reserved-dates');
@@ -25,7 +33,6 @@ function App() {
       } catch (err) {
         console.log(err);
       }
-
     }
     fetchReservedDates();
   }, []);
