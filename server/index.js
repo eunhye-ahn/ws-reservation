@@ -22,13 +22,11 @@ io.on('connection', (socket) => {
     //캘린더구독 신청 > reservation 방 입장시킴
     socket.on('subscribe:calendar', () => {
         socket.join('reservation')
-        console.log('캘린더 구독')
     })
 
     //모달구독 신청
     socket.on('subscribe:date', (date) => {
         socket.join(`reservation:${date}`)
-        console.log('모달 구독')
     })
 
 })
