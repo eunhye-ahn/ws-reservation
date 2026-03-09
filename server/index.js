@@ -25,22 +25,34 @@ io.on('connection', (socket) => {
         console.log('캘린더 구독')
     })
 
+    //모달구독 신청
+    socket.on('subscribe:date', (date) => {
+        socket.join(`reservation:${date}`)
+        console.log('모달 구독')
+    })
+
 })
 
 
-// const reservations = new Map();
 
-//예약된날짜조회
-app.get("/api/reservations/reserved-dates", (req, res) => {
+const getFullDates = (callback) => {
     db.query(
         "SELECT DATE(start_at) as reservedDates FROM reservations GROUP BY DATE(start_at) HAVING COUNT(*)=3",
         (err, result) => {
             if (err) {
                 return res.status(500).json({ error: "서버 오류" });
             }
-            return res.status(200).json({ reservedDates: result.map(item => dayjs(item.reservedDates).format("YYYY-MM-DD")) });
+            const fullDates = result.map(item => dayjs(item.reservedDates).format("YYYY-MM-DD"));
+            callback(fullDates);
         }
     )
+}
+
+//예약된날짜조회
+app.get("/api/reservations/reserved-dates", (req, res) => {
+    getFullDates((fullDates) => {
+        res.status(200).json({ reservedDates: fullDates })
+    })
 });
 
 //예약된시간조회
@@ -55,6 +67,9 @@ app.get("/api/reservations/reserved-times", (req, res) => {
             }
             return res.status(200).json({ reservedTimes: result.map(item => item.reservedTimes) });
         }
+
+
+
     )
 })
 
@@ -93,8 +108,14 @@ app.post("/api/reservations", (req, res) => {
                         return res.status(500).json({ error: "서버오류" });
                     }
                     const date = dayjs(start_at).format("YYYY-MM-DD");
+                    const time = dayjs(start_at).format("HH:mm:ss");
+                    getFullDates((fullDates) => {
+                        const isFull = fullDates.includes(date);
+                        io.to('reservation').emit('update:calendar', { date, isFull });
+                    })
                     // reservation 방 유저들에게 브로드캐스트
-                    io.to('reservation').emit('update:calendar', { date });
+
+                    io.to(`reservation:${date}`).emit('update:time', { time });
                     return res.status(201).json({ message: "예약완료" });
                 })
 

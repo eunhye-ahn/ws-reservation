@@ -21,8 +21,12 @@ function App() {
     //소켓 구독신청과 수신
     socketRef.current.emit('subscribe:calendar')
     socketRef.current.on('update:calendar', (data) => {
-      console.log(data);
+      if (data.isFull) {
+        setReservedDates(prev => [...prev, data.date])
+      }
     })
+
+
 
     const fetchReservedDates = async () => {
       try {
@@ -57,7 +61,6 @@ function App() {
     setIsOpen(true)
   }
 
-
   return (
     <div >
       <Calendar
@@ -76,7 +79,6 @@ function App() {
     </div>
   );
 }
-
 export default App;
 
 

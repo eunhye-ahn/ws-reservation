@@ -1,11 +1,25 @@
 import { useEffect, useState } from "react";
 import dayjs from "dayjs";
+import { io } from "socket.io-client";
+import { useSocket } from "../hooks/useSocket";
 
 const ALL_TIMES = ["10:00:00", "11:00:00", "12:00:00"];
 
 const ReservationModal = ({ date, onClose }) => {
     const [reservedTimes, setReservedTimes] = useState([]);
     const [selectedTime, setSelectedTime] = useState(null);
+
+    const socketRef = useSocket();
+
+    useEffect(() => {
+        const selectedDate = dayjs(date).format("YYYY-MM-DD")
+        socketRef.current.emit('subscribe:date', selectedDate);
+        socketRef.current.on('update:time', (data) => {
+            setReservedTimes(prev => [...prev, data.time]);
+            console.log(data);
+        })
+
+    }, []);
 
     const fetchReservedTimes = async (date) => {
         try {
